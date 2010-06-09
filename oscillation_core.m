@@ -7,6 +7,8 @@
 % fieldValues - voltage at each time stamp
 % licktimes - timestamps of first lick of every trial
 % spiketimes
+% Nstd
+% NE
 
 
 LE = [LE_SM, LE_SP; ones(1,length(LE_SM)), 2*ones(1,length(LE_SP))];
@@ -37,25 +39,17 @@ spiketimeforalltrials = zeros(numberoftrials,sizeofspikedetails);
 
 for trial = 2:2%numberoftrials
     
-    fprintf('Analyzing trial %d \n',trial);    
-
-    [ allmode,interestingmode ] = ...
-        findInterestingModes( field, spiketimes, startevent(trial), endevent(trial), ...
-        Fs, backwindow, fwdwindow, timebin,windowforeachtrial(trial) );
+    fprintf('Analyzing trial %d \n',trial);
+    startevent_ms = startevent(trial);
+    endevent_ms = endevent(trial);
+    
+    [ allmode,interestingmode,freqosc ] = ...
+        findInterestingModes( field, startevent_ms, endevent_ms, ...
+        Fs, backwindow, fwdwindow, Nstd, NE );
     
     if length(interestingmode) > 1
         fprintf('NOTE: Multiple interesting modes for trial %d \n Lower frequency mode considered \n',trial);
     end
-
-    if length(spikephasefortrial)< sizeofspikedetails
-        spikephasefortrial = [spikephasefortrial;1000*ones(sizeofspikedetails-length(spikephasefortrial),1)];
-        spiketimefortrial = [spiketimefortrial;zeros(sizeofspikedetails-length(spiketimefortrial),1)];
-    elseif length(spikephasefortrial) > sizeofspikedetails
-        fprintf('Error: Size > sizeofspikedetails');
-    end
-
-    spikephaseforalltrials(trial,:) = spikephasefortrial';
-    spiketimeforalltrials(trial,:) = spiketimefortrial';
     %     plot(relevantspikes,spikephase,'o');set(gca,'YLim',[-180,180]);
     
     fieldfortrial = field(:,field(1,:)>(startevent_ms-backwindow));
@@ -65,16 +59,22 @@ for trial = 2:2%numberoftrials
     spikesfortrial = spikesfortrial((spikesfortrial<(endevent_ms + fwdwindow)));
     spikesfortrial = spikesfortrial - startevent_ms;
 
-
     spikephasefortrial = 1000*ones(length(spikesfortrial),1);
     spiketimefortrial = zeros(length(spikesfortrial),1); % This could just have been spikesfortrial. But since the sampling rate of LFP is different from that of spikes, we need to define spiketimes wrt the LFP samples
+    
+    if length(spikephasefortrial)< sizeofspikedetails
+        spikephasefortrial = [spikephasefortrial;1000*ones(sizeofspikedetails-length(spikephasefortrial),1)];
+        spiketimefortrial = [spiketimefortrial;zeros(sizeofspikedetails-length(spiketimefortrial),1)];
+    elseif length(spikephasefortrial) > sizeofspikedetails
+        fprintf('Error: Size > sizeofspikedetails');
+    end
 
     %  ******   Calculate the phase that the spikes occur and readjust spike times   ******
     N = size(allmode,1);
     c = linspace(-backwindow,endevent_ms-startevent_ms+fwdwindow,N);
     if ~isempty(interestingmode)
         [frequency phase]= ifreq(allmode,timebin,interestingmode(end),0,0);
-        index = find(diff(c<(backwindow+window))<0);
+        index = find(diff(c<(backwindow+windowforeachtrial(trial)))<0);
         if ~isempty(index)
             phaseforeachtrialatendevent = phase(index)*360/(2*pi);
         end
@@ -87,4 +87,7 @@ for trial = 2:2%numberoftrials
             end
         end
     end
+
+    spikephaseforalltrials(trial,:) = spikephasefortrial';
+    spiketimeforalltrials(trial,:) = spiketimefortrial';
 end
