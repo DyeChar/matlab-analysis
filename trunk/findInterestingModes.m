@@ -1,5 +1,7 @@
-function [allmode,interestingmode] ...
+function [allmode,interestingmode, freqosc] ...
             = findInterestingModes( field, startevent_ms, endevent_ms, Fs, backwindow, fwdwindow, Nstd, NE )
+% This code is the core functionality for retrieving the oscillations
+% between 5 and 8 Hz.
   
 fieldfortrial = field(:,field(1,:)>(startevent_ms-backwindow));
 fieldfortrial = fieldfortrial(:,fieldfortrial(1,:)< (endevent_ms+fwdwindow));

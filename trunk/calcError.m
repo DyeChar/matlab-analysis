@@ -1,8 +1,8 @@
 function [ sqd_errors groundtruthw interestingmode fieldtimesw] = task1( phaseoffset_rad, Nstd, NE )
+% Example parameter values:
 % phaseoffset_rad = [0,2*pi) = ex. rand()*2*pi
 % Nstd = 0.4
 % NE = 200
-% score = 1 - mean squared error
 
 Fs = 623.5232;
 backwindow = 500;
