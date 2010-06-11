@@ -1,7 +1,7 @@
 function [all_errors gimt pvals] = findBestParameterValue( pvals )
 
 all_errors = zeros( size(pvals) );
-num_r = 3;
+num_r = 3;% number of iterations
 gimt = cell( length(pvals), num_r, 5); % groundtruth, interesting mode, field times, parameter value, error
 
 NE = 100;

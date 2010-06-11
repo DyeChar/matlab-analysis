@@ -1,4 +1,4 @@
-function [ sqd_errors groundtruthw interestingmode fieldtimesw] = task1( phaseoffset_rad, Nstd, NE )
+function [ sqd_errors groundtruthw interestingmode fieldtimesw] = calcError( phaseoffset_rad, Nstd, NE )
 % Example parameter values:
 % phaseoffset_rad = [0,2*pi) = ex. rand()*2*pi
 % Nstd = 0.4
