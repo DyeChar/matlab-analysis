@@ -9,52 +9,54 @@ function [ allerrors pvals ] = plot_gimt( gimt )
 %    1 = groundtruthw (windowed ground truth)
 %    2 = interestingmode
 %    3 = fieldtimesw (windowed field times)
-%    4 = pvals(p) (the pvalue of this data
+%    4 = pvals(p) (the pvalue of this data)
 %    5 = err (the error)
 %    6 = fieldtimes (entire range of the field times)
 %    7 = fieldValues
 
-besti = 1;
-worsti = 1;
-bestr = 1;
-worstr = 1;
 allerrors = zeros(size(gimt,1),size(gimt,2));
 pvals = zeros(size(gimt,1),size(gimt,2),1);
 
-besterr = 1;
-worsterr = 0;
 for i = 1:size(gimt,1)
     for r = 1:size(gimt,2)
         error = mean( ( gimt{i,r,2} - gimt{i,r,1} ) .^ 2 );
         allerrors(i,r) = error;
         pvals(i,r) = gimt{i,r,4};
-        if error < besterr
-            besterr = error;
-            besti = i;
-            bestr = r;
-        elseif error > worsterr
-            worsterr = error;
-            worsti = i;
-            worstr = r;
-        end
     end
 end
+
 figure;
-anova1(allerrors',pvals(:));
-ylim([min(allerrors(:)) 2*median(allerrors(:))])
+boxplot(allerrors(:),pvals(:),'whisker',3);
 title('Errors');
 
+worst_run_err_of_paramv = zeros(size(gimt,1),1);
+worst_run_of_paramv = zeros(size(gimt,1),1);
+for i = 1:size(gimt,1)
+    worst_run_err_of_paramv(i) = max(allerrors(i,:));
+	worst_run_of_paramv(i) = find( allerrors(i,:) == max(allerrors(i,:)) );
+end
+
+sorted = sort(worst_run_err_of_paramv);
+% retrieve the jth-best parameters
+jmax = 5;
+plotncols = 2;
+plotnrows = ceil((jmax+1)/plotncols);
+
 figure;
-range_i = [besti worsti];
-range_r = [bestr worstr];
-subplot( length(range_i)+2, 1, 1);
-plot(gimt{range_i(1), 1, 6}, gimt{range_i(1), 1, 7});
+subplot( plotnrows, plotncols, 1);
+plot(gimt{1, 1, 6}, gimt{1, 1, 7});
 title('Example Input Signal');
 
-for i = 1:length(range_i)
-     subplot( length(range_i)+1 , 1, i+1);
-     plot( gimt{ range_i(i), range_r(i), 3 }, [ gimt{range_i(i),range_r(i),1}, gimt{range_i(i),range_r(i),2} ] );
-     
-    error = mean( ( gimt{range_i(i),range_r(i),2} - gimt{range_i(i),range_r(i),1} ) .^ 2 );
-    title(['Param=' num2str(gimt{range_i(i),range_r(i),4}) ' Error=' num2str(error, 4)]);
+for j = 1:jmax
+    if j == 1
+        prefix = 'Best ';
+    else
+        prefix = [iptnum2ordinal(j) ' best '];
+        prefix = [upper(prefix(1)) prefix(2:end)];
+    end
+    i = find( worst_run_err_of_paramv == sorted(j) );
+    r = worst_run_of_paramv(i);
+    subplot( plotnrows, plotncols, j+1);
+    plot( gimt{ i, r, 3 }, [ gimt{i,r,1}, gimt{i,r,2} ] );
+    title([prefix 'Param=' num2str(gimt{i,r,4}) ' Error=' num2str(worst_run_err_of_paramv(i))]);
 end
