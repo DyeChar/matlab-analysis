@@ -28,11 +28,13 @@ end
 
 figure;
 range = [besti worsti];
-subplot( length(range)+1 , 1, 1);
+subplot( length(range)+2, 1, 1);
+plot(gimt{range(1), 1, 6}, gimt{range(1), 1, 7});
+subplot( length(range)+2 , 1, 2);
 plot([gimt{ :, 1, 4 }],allerrors);
 
 for i = 1:length(range)
-     subplot( length(range)+1 , 1, i+1);
+     subplot( length(range)+2 , 1, i+2);
      plot( gimt{ range(i), 1, 3 }, [ gimt{range(i),1,1}, gimt{range(i),1,2} ] );
      
     error = mean( ( gimt{range(i),1,2} - gimt{range(i),1,1} ) .^ 2 );

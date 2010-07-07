@@ -7,7 +7,6 @@ fieldfortrial = field(:,field(1,:)>(startevent_ms-backwindow));
 fieldfortrial = fieldfortrial(:,fieldfortrial(1,:)< (endevent_ms+fwdwindow));
 
 allmode = eemd(fieldfortrial(2,:), Nstd, NE);
-
 %  ******   Find the intrinsic mode functions of interest   ******
 
 interestingmode = [];
@@ -20,6 +19,7 @@ for mode = 2:size(allmode,2)
         interestingmode = [interestingmode mode];
         freqosc = f(i+index);
     end
+end
 end
 % for i = 1:3
 %     figure;
