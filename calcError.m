@@ -1,4 +1,4 @@
-function [ sqd_errors groundtruthw interestingmode fieldtimesw] = calcError( phaseoffset_rad, Nstd, NE )
+function [ sqd_errors groundtruthw interestingmode fieldtimesw fieldtimes fieldValues] = calcError( phaseoffset_rad, Nstd, NE )
 % Example parameter values:
 % phaseoffset_rad = [0,2*pi) = ex. rand()*2*pi
 % Nstd = 0.4
@@ -12,17 +12,18 @@ trial = 1;
 % field(:,1) time in ms, increments about 1.58 every time
 % field(:,2) ranges from -.5 to .5, normalized LFP?
 
-fieldtimes = 0:1.58:10000; % create timestamps where LFP was recorded
+fieldtimes = 0:1000/Fs:10000; % create timestamps where LFP was recorded
 %timebin = (max(fieldtimes) - min(fieldtimes))/length(fieldtimes);%Time bin of sampling
 
 
 startevent_ms = 2000;
-endevent_ms = startevent_ms + 2500;
+endevent_ms = startevent_ms + 3000;
 
 event_mask = ( fieldtimes >= startevent_ms ) & ( fieldtimes <= endevent_ms );
 ground_truth = sin_Hz(fieldtimes, 7, phaseoffset_rad).*event_mask;
 
-fieldSin = ground_truth + sin_Hz(fieldtimes, 20, rand()*2*pi);
+
+fieldSin = ground_truth;
 
 fieldValues = fieldSin;
 Z = max(fieldValues)-min(fieldValues);
@@ -30,14 +31,20 @@ Z = max(fieldValues)-min(fieldValues);
 fieldValues = fieldValues/Z;
 groundtruth = ground_truth/Z;
 
+load('F:\acads\HuShu lab\data\data for codes\bandstoppedLFPnoise.mat');
+fieldnoise = .5 * ( rand( size( fieldValues ) ) - .5 );
+indexnoise = fix(length(fieldtimes)/length(invnoisespec));
+invnoisespecstretch = repmat(invnoisespec,1,indexnoise);
+invnoisespecstretch = [invnoisespecstretch invnoisespec(1:rem(length(fieldtimes),length(invnoisespec)))];
+fieldnoise = fieldnoise + 1.5*invnoisespecstretch;
+
 % Add noise
 if true
-    fieldValues = .2 * ( rand( size( fieldValues ) ) - .5 ) + fieldValues;
+    fieldValues = fieldnoise + fieldValues;
     Z = max(fieldValues) - min(fieldValues);
     fieldValues = fieldValues / Z;
     groundtruth = groundtruth / Z;
 end
-
 field = [fieldtimes; fieldValues];
 
 % create versions that correspond to event window
@@ -48,13 +55,13 @@ fieldtimesw = fieldtimes(win_mask)';
 [allmode,indx_interest] ...
             = findInterestingModes( field, startevent_ms, endevent_ms, Fs, backwindow, fwdwindow, Nstd, NE );
         
-if length(indx_interest) > 1
-    fprintf('NOTE: Multiple interesting modes for trial %d \n Lower frequency mode considered \n',trial);
-end
+% if length(indx_interest) > 1
+%     fprintf('NOTE: Multiple interesting modes for trial %d \n Lower frequency mode considered \n',trial);
+% end
 
 % figure;
 % for i = 1:length(indx_interest)
 %     subplot(length(indx_interest),1,i); plot(allmode(:,indx_interest(i)));
 % end
-interestingmode = allmode(:,indx_interest(1));
+interestingmode = allmode(:,indx_interest(end));
 sqd_errors = ( interestingmode - groundtruthw ) .^ 2;
