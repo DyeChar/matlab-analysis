@@ -1,17 +1,15 @@
 function [ sqd_errors groundtruthw interestingmode fieldtimesw ...
-    fieldtimes fieldValues groupName] = calcError( phaseoffset_rad, Nstd, NE, trial_duration, sample_noise )
+    fieldtimes fieldValues groupName] = calcError( phaseoffset_rad, Nstd, NE, trial_duration )
 % Example parameter values:
 % phaseoffset_rad = [0,2*pi) = ex. rand()*2*pi
 % Nstd = 0.4
 % NE = 200
+% trial_duration = 1000
 
 Fs = 623.5232;
 backwindow = 500;
 fwdwindow = 500;
 %window = 2500;
-trial = 1;
-% field(:,1) time in ms, increments about 1.58 every time
-% field(:,2) ranges from -.5 to .5, normalized LFP?
 
 fieldtimes = 0:1000/Fs:10000; % create timestamps where LFP was recorded
 %timebin = (max(fieldtimes) - min(fieldtimes))/length(fieldtimes);%Time bin of sampling
@@ -30,9 +28,23 @@ Z = max(fieldValues)-min(fieldValues);
 fieldValues = fieldValues/Z;
 groundtruth = ground_truth/Z;
 
-if nargin < 5
-    load('bandstoppedLFPnoise.mat');
-    sample_noise = invnoisespec;
+load('bandstoppedLFPnoise.mat');
+sample_noise = invnoisespec;
+
+L = length(sample_noise);
+NFFT = 2^nextpow2(L); % Next power of 2 from length of signal
+Y = fft(sample_noise,NFFT);
+f = Fs/2*linspace(0,1,NFFT/2+1);
+
+% rebuild signal
+rebuilt = ifft( (real(Y)+i*imag(Y)), NFFT);
+rebuilt = rebuilt(1:L);
+
+if false % set to true of you want to plot
+    plot(f,2*abs(Y(1:NFFT/2+1)/L)) 
+    title('Single-Sided Amplitude Spectrum of y(t)')
+    xlabel('Frequency (Hz)')
+    ylabel('|Y(f)|')
 end
 
 % make sure that the sample noise is as long as the fieldtimes
