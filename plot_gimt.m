@@ -9,24 +9,25 @@ function [ allerrors pvals ] = plot_gimt( gimt )
 %    1 = groundtruthw (windowed ground truth)
 %    2 = interestingmode
 %    3 = fieldtimesw (windowed field times)
-%    4 = pvals(p) (the pvalue of this data)
+%    4 = Nstd (the Nstd value of this data)
 %    5 = err (the error)
 %    6 = fieldtimes (entire range of the field times)
 %    7 = fieldValues
+%    8 = groupName (a string that indicates how to group for parameters)
 
 allerrors = zeros(size(gimt,1),size(gimt,2));
-pvals = zeros(size(gimt,1),size(gimt,2),1);
+gnames = cell(size(gimt,1),size(gimt,2));
 
 for i = 1:size(gimt,1)
     for r = 1:size(gimt,2)
         error = mean( ( gimt{i,r,2} - gimt{i,r,1} ) .^ 2 );
         allerrors(i,r) = error;
-        pvals(i,r) = gimt{i,r,4};
+        gnames{i,r} = gimt{i,r,8};
     end
 end
 
 figure;
-boxplot(allerrors(:),pvals(:),'whisker',3);
+boxplot(allerrors(:),gnames(:),'whisker',Inf);
 title('Errors');
 
 worst_run_err_of_paramv = zeros(size(gimt,1),1);
@@ -38,7 +39,7 @@ end
 
 sorted = sort(worst_run_err_of_paramv);
 % retrieve the jth-best parameters
-jmax = 5;
+jmax = min(5,length(sorted));
 plotncols = 2;
 plotnrows = ceil((jmax+1)/plotncols);
 
@@ -58,5 +59,5 @@ for j = 1:jmax
     r = worst_run_of_paramv(i);
     subplot( plotnrows, plotncols, j+1);
     plot( gimt{ i, r, 3 }, [ gimt{i,r,1}, gimt{i,r,2} ] );
-    title([prefix 'Param=' num2str(gimt{i,r,4}) ' Error=' num2str(worst_run_err_of_paramv(i))]);
+    title([prefix gimt{i,r,8} ' Error=' num2str(worst_run_err_of_paramv(i))]);
 end
