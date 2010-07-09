@@ -1,28 +1,36 @@
-function [all_errors gimt pvals] = findBestParameterValue( pvals )
+function [all_errors gimt Nstds] = findBestParameterValue( Nstds, NEs, trial_durations )
 
-all_errors = zeros( size(pvals) );
-num_r = 3;% number of iterations
-gimt = cell( length(pvals), num_r, 7); % groundtruth, interesting mode, field times, parameter value, error,fieldtimes, fieldValues
+all_errors = zeros( size(Nstds) );
+num_r = 10;% number of iterations
+gimt = cell( length(Nstds), num_r, 7); % groundtruth, interesting mode, field times, parameter value, error,fieldtimes, fieldValues
 
-NE = 50;
+%NE = 50;
 
-for p = 1:length( pvals )
-    mean_error = 0;
-    fprintf('processing pval = %g \n',pvals(p));
-    for r = 1:num_r
-        [ sqd_errors groundtruthw interestingmode fieldtimesw fieldtimes fieldValues] = calcError( rand()*2*pi, pvals(p), NE );
-        err = mean( sqd_errors );
-        gimt{ p, r, 1 } = groundtruthw;
-        gimt{ p, r, 2 } = interestingmode;
-        gimt{ p, r, 3 } = fieldtimesw;
-        gimt{ p, r, 4 } = pvals(p);
-        gimt{ p, r, 5 } = err;
-        gimt{ p, r, 6 } = fieldtimes;
-        gimt{ p, r, 7 } = fieldValues;
-        
-        mean_error = (mean_error * (r-1) + err)/r ;
+iter = 1;
+for Nstd = Nstds
+    for NE = NEs
+        for trial_duration = trial_durations
+            mean_error = 0;
+            fprintf('processing Nstd = %g \n',Nstd);
+            for r = 1:num_r
+                [ sqd_errors groundtruthw interestingmode fieldtimesw ...
+                    fieldtimes fieldValues groupName] = calcError( rand()*2*pi, Nstd, NE, trial_duration );
+                err = mean( sqd_errors );
+                gimt{ iter, r, 1 } = groundtruthw;
+                gimt{ iter, r, 2 } = interestingmode;
+                gimt{ iter, r, 3 } = fieldtimesw;
+                gimt{ iter, r, 4 } = Nstd;
+                gimt{ iter, r, 5 } = err;
+                gimt{ iter, r, 6 } = fieldtimes;
+                gimt{ iter, r, 7 } = fieldValues;
+                gimt{ iter, r, 8 } = groupName;
+
+                mean_error = (mean_error * (r-1) + err)/r ;
+            end
+            all_errors( iter ) = mean_error;
+            iter=iter+1;
+        end
     end
-    all_errors(p) = mean_error;
     
 %     save('temp1');
 end

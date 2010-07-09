@@ -1,4 +1,5 @@
-function [ sqd_errors groundtruthw interestingmode fieldtimesw fieldtimes fieldValues] = calcError( phaseoffset_rad, Nstd, NE )
+function [ sqd_errors groundtruthw interestingmode fieldtimesw ...
+    fieldtimes fieldValues groupName] = calcError( phaseoffset_rad, Nstd, NE, trial_duration, sample_noise )
 % Example parameter values:
 % phaseoffset_rad = [0,2*pi) = ex. rand()*2*pi
 % Nstd = 0.4
@@ -17,26 +18,44 @@ fieldtimes = 0:1000/Fs:10000; % create timestamps where LFP was recorded
 
 
 startevent_ms = 2000;
-endevent_ms = startevent_ms + 3000;
+endevent_ms = startevent_ms + trial_duration;
 
 event_mask = ( fieldtimes >= startevent_ms ) & ( fieldtimes <= endevent_ms );
-ground_truth = sin_Hz(fieldtimes, 7, phaseoffset_rad).*event_mask;
+ground_truth = sin_Hz(fieldtimes, 6.5+rand(), phaseoffset_rad).*event_mask;
 
 
-fieldSin = ground_truth;
-
-fieldValues = fieldSin;
+fieldValues = ground_truth;
 Z = max(fieldValues)-min(fieldValues);
 
 fieldValues = fieldValues/Z;
 groundtruth = ground_truth/Z;
 
-load('F:\acads\HuShu lab\data\data for codes\bandstoppedLFPnoise.mat');
-fieldnoise = .5 * ( rand( size( fieldValues ) ) - .5 );
-indexnoise = fix(length(fieldtimes)/length(invnoisespec));
-invnoisespecstretch = repmat(invnoisespec,1,indexnoise);
-invnoisespecstretch = [invnoisespecstretch invnoisespec(1:rem(length(fieldtimes),length(invnoisespec)))];
-fieldnoise = fieldnoise + 1.5*invnoisespecstretch;
+if nargin < 5
+    load('bandstoppedLFPnoise.mat');
+    sample_noise = invnoisespec;
+end
+
+% make sure that the sample noise is as long as the fieldtimes
+if length(fieldtimes) > length(sample_noise)
+    indexnoise = ceil( length(fieldtimes)/length(sample_noise) );
+    sample_noise = repmat(sample_noise,1,indexnoise);
+end
+% take a random section of sample_noise of length(fieldtimes)
+roffset = ceil( rand()*( length(sample_noise) - length(fieldtimes) ));
+sample_noise = sample_noise(roffset:roffset+length(fieldtimes)-1);
+% scale it, since we also scale the ground truth
+sample_noise = sample_noise / ( max(sample_noise)-min(sample_noise) );
+
+whitenoiseweight = .5; %.5;
+realnoiseweight = 1; %2.5;
+
+whitenoise = ( rand( size( fieldValues ) ) - .5 );
+
+fieldnoise = whitenoiseweight*whitenoise + realnoiseweight*sample_noise;
+
+groupName = ['Nstd=' num2str(Nstd) ',NE=' num2str(NE) ...
+    ',white=' num2str(whitenoiseweight) ',realnoise=' num2str(realnoiseweight)...
+    ',trialdur=' num2str(trial_duration) ];
 
 % Add noise
 if true
